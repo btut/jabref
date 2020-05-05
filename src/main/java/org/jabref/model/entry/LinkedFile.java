@@ -13,7 +13,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 import javafx.beans.Observable;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.StringProperty;
 
 import org.jabref.model.database.BibDatabaseContext;
@@ -32,6 +36,10 @@ public class LinkedFile implements Serializable {
     private transient StringProperty link = new SimpleStringProperty();
     private transient StringProperty fileType = new SimpleStringProperty();
 
+    // Store the download-progress if this file is just being downloaded
+    private transient final DoubleProperty downloadProgress = new SimpleDoubleProperty(-1);
+    private transient final BooleanProperty downloadOngoing = new SimpleBooleanProperty(false);
+
     public LinkedFile(String description, Path link, String fileType) {
         this(description, link.toString(), fileType);
     }
@@ -44,6 +52,7 @@ public class LinkedFile implements Serializable {
         this.description.setValue(Objects.requireNonNull(description));
         this.fileType.setValue(Objects.requireNonNull(fileType));
         setLink(Objects.requireNonNull(link));
+        downloadOngoing.bind(downloadProgress.greaterThanOrEqualTo(0).and(downloadProgress.lessThan(1)));
     }
 
     public LinkedFile(URL link, String fileType) {
@@ -90,8 +99,16 @@ public class LinkedFile implements Serializable {
         }
     }
 
+    public BooleanProperty downloadOngoingProperty() {
+        return downloadOngoing;
+    }
+
+    public DoubleProperty downloadProgressProperty() {
+        return downloadProgress;
+    }
+
     public Observable[] getObservables() {
-        return new Observable[] {this.link, this.description, this.fileType};
+        return new Observable[] {this.link, this.description, this.fileType, this.downloadOngoing, this.downloadProgress};
     }
 
     @Override

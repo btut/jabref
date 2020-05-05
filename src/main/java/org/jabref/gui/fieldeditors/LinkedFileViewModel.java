@@ -14,9 +14,7 @@ import javax.xml.transform.TransformerException;
 
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonBar.ButtonData;
@@ -62,8 +60,6 @@ public class LinkedFileViewModel extends AbstractViewModel {
 
     private final LinkedFile linkedFile;
     private final BibDatabaseContext databaseContext;
-    private final DoubleProperty downloadProgress = new SimpleDoubleProperty(-1);
-    private final BooleanProperty downloadOngoing = new SimpleBooleanProperty(false);
     private final BooleanProperty isAutomaticallyFound = new SimpleBooleanProperty(false);
     private final BooleanProperty canWriteXMPMetadata = new SimpleBooleanProperty(false);
     private final DialogService dialogService;
@@ -107,7 +103,6 @@ public class LinkedFileViewModel extends AbstractViewModel {
                 },
                 ValidationMessage.warning(Localization.lang("Could not find file '%0'.", linkedFile.getLink())));
 
-        downloadOngoing.bind(downloadProgress.greaterThanOrEqualTo(0).and(downloadProgress.lessThan(1)));
         canWriteXMPMetadata.setValue(!linkedFile.isOnlineLink() && linkedFile.getFileType().equalsIgnoreCase("pdf"));
     }
 
@@ -121,14 +116,6 @@ public class LinkedFileViewModel extends AbstractViewModel {
 
     public BooleanProperty isAutomaticallyFoundProperty() {
         return isAutomaticallyFound;
-    }
-
-    public BooleanProperty downloadOngoingProperty() {
-        return downloadOngoing;
-    }
-
-    public DoubleProperty downloadProgressProperty() {
-        return downloadProgress;
     }
 
     public StringProperty linkProperty() {
@@ -171,8 +158,6 @@ public class LinkedFileViewModel extends AbstractViewModel {
 
     public Observable[] getObservables() {
         List<Observable> observables = new ArrayList<>(Arrays.asList(linkedFile.getObservables()));
-        observables.add(downloadOngoing);
-        observables.add(downloadProgress);
         observables.add(isAutomaticallyFound);
         return observables.toArray(new Observable[observables.size()]);
     }
@@ -415,11 +400,9 @@ public class LinkedFileViewModel extends AbstractViewModel {
             downloadTask.onSuccess(destination -> {
                 LinkedFile newLinkedFile = LinkedFilesEditorViewModel.fromFile(destination, databaseContext.getFileDirectoriesAsPaths(filePreferences), externalFileTypes);
                 newLinkedFile.setDescription(linkedFile.getDescription());
-                linkedFile.setLink(newLinkedFile.getLink());
-                linkedFile.setFileType(newLinkedFile.getFileType());
                 entry.addFile(0, newLinkedFile);
             });
-            downloadProgress.bind(downloadTask.workDonePercentageProperty());
+            linkedFile.downloadProgressProperty().bind(downloadTask.workDonePercentageProperty());
             taskExecutor.execute(downloadTask);
         } catch (MalformedURLException exception) {
             dialogService.showErrorDialogAndWait(Localization.lang("Invalid URL"), exception);
