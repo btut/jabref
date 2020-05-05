@@ -401,6 +401,7 @@ public class LinkedFileViewModel extends AbstractViewModel {
                 LinkedFile newLinkedFile = LinkedFilesEditorViewModel.fromFile(destination, databaseContext.getFileDirectoriesAsPaths(filePreferences), externalFileTypes);
                 newLinkedFile.setDescription(linkedFile.getDescription());
                 entry.addFile(0, newLinkedFile);
+                entry.removeFile(linkedFile);
             });
             linkedFile.downloadProgressProperty().bind(downloadTask.workDonePercentageProperty());
             taskExecutor.execute(downloadTask);
